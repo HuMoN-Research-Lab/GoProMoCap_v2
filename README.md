@@ -4,7 +4,7 @@
 
 1.OpenCV <br /> 
 2.numpy <br /> 
-3.Spy - from least_square optimisation during bundle adjustment <br /> 
+3.Scipy - from least_square optimisation during bundle adjustment <br /> 
 
 
 
