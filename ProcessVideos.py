@@ -14,66 +14,53 @@ from config import dataFile, num_of_cameras,Source_video_List
 
 #Concat Videos
 ############This function needs work, I need to find a way to place this in a for loop so amount of cameras doesnt matter
-def concatVideos(InputFilePath,OutputFilepath):
+def concatVideos(Source_video_List):
     '''Functions input is filepath is path to raw video folder
     If the videos in the folder are multiple parts the function uses ffmpeg to concat the video parts together
     It saves the concated video to an output folder 
     '''
-
+    num_of_cameras=2
+    dataFile = 'C:/Users/chris/Test'
+    print(os.listdir(dataFile))
     if not os.path.exists(dataFile+'/Synced'): 
         os.mkdir(dataFile+'/Synced')
     syncPath = dataFile+'/Synced' 
-    if (len(os.listdir(Source_video_List))) > num_of_cameras 
-    #Create a txt file for names of video parts 
-    cam1vids = open(syncPath+'/cam1vids.txt','a')
-    cam2vids = open(syncPath+'/cam2vids.txt','a')
-    cam3vids = open(syncPath+'/cam3vids.txt','a')
-    cam4vids = open(syncPath+'/cam4vids.txt','a')
-    for video in os.listdir(Source_video_List):  #for loop parses through the video folder 
-
-            #Get length of the name of cameras
-            if num_of_cameras > 0:
-                cam1length = len(cam_names[0])
-                if video[:cam1length] == cam_names[0]: # if the video is from Cam1
-                    cam1vids.write('file'+" '" +'\\'+video+"'") #write the file name of the video to the text file
-                    cam1vids.write('\n')                     
-            if num_of_cameras > 1:
-                cam2length = len(cam_names[1])
-                if video[:cam2length] == cam_names[1]: # if the video is from Cam2
-                    cam2vids.write('file'+" '" +'\\'+video+"'") #write the file name of the video to the text file
-                    cam2vids.write('\n')                   
-            if num_of_cameras > 2:
-                cam3length = len(cam_names[2])
-                if video[:cam3length] == cam_names[2]: # if the video is from Cam3
-                    cam3vids.write('file'+" '" +'\\'+video+"'") #write the file name of the video to the text file
-                    cam3vids.write('\n') 
-            if num_of_cameras > 3:
-                cam4length = len(cam_names[3])
-                if video[:cam4length] == cam_names[3]: # if the video is from Cam4
-                    cam4vids.write('file'+" '" +'\\'+video+"'") #write the file name of the video to the text file
-                    cam4vids.write('\n')                     
-    #Close the text files
-    cam1vids.close()
-    cam2vids.close()
-    cam3vids.close()
-    cam4vids.close()
-    #Use ffmpeg to join all parts of the video together
-    in_file= ffmpeg.input
-    for jj in range(num_of_cameras):
-        (ffmpeg
-        .input(InputFilePath+'/cam'+str(jj+1)+'vids.txt', format='concat', safe=0)
-        .output(OutputFilepath+'/'+cam_names[jj]+'.mp4', c='copy')
-        .run()
-        )
-   
-
+    videoList = os.listdir(Source_video_List)
+    if len(videoList) > num_of_cameras: 
+        #Create a txt file for names of video parts
+        txtFileList = []
+        camNameList = []
+        for ii in range(num_of_cameras): 
+            camNameTxt = open(Source_video_List+'/cam'+str(ii+1)+'vids.txt','a')
+            txtFileList.append(camNameTxt)
+            camName = 'Cam'+str(ii+1)
+            camNameList.append(camName)
+        numOfParts = len(videoList)/num_of_cameras
+        k = 0
+        for video in os.listdir(Source_video_List):  #for loop parses through the video folder 
+            if video[:4] in camNameList:
+                txtFileList[k].write('file'+" '" +'\\'+video+"'")
+                txtFileList[k].write('\n')
+            k+=1
+        #Use ffmpeg to join all parts of the video together
+        in_file= ffmpeg.input
+        for jj in range(num_of_cameras):
+            (ffmpeg
+            .input(Source_video_List+'/cam'+str(jj+1)+'vids.txt', format='concat', safe=0)
+            .output(syncPath+'/'+videoList[jj]+'.mp4', c='copy')
+            .run()
+            )
+    
+Source_video_List = 'C:/Users/chris/Test/Data'
+concatVideos(Source_video_List)
+''' 
 #################### Undistortion #########################
 #ALSO NEEDS WORK
 def undistortVideos(Inputfilepath,CameraParamsFilePath,Outputfilepath):
-    '''Function input is raw distorted videos filepath and the filepath to save the videos to  
+   Function input is raw distorted videos filepath and the filepath to save the videos to  
     Uses ffmpeg and camera intrinsics to undistort the video
     Outputs the undistorted video to the specified file path
-    '''
+   
     if not os.path.exists(dataFile+'/Synced'): 
         os.mkdir(dataFile+'/Synced')
     syncPath = dataFile+'/Synced' 
@@ -84,8 +71,8 @@ def undistortVideos(Inputfilepath,CameraParamsFilePath,Outputfilepath):
         if boolRotateVid ==True:
             subprocess.call(['ffmpeg', '-i', Inputfilepath+'/'+cam_names[jj]+'.mp4', '-vf', "lenscorrection=cx=0.5:cy=0.5:k1="+dist[4]+":k2="+dist[3]+",transpose="+str(rotateVid), Outputfilepath+'/'+cam_names[jj]+'.mp4'])
         if boolRotateVid ==False:
-            subprocess.call(['ffmpeg', '-i', Inputfilepath+'/'+cam_names[jj]+'.mp4', '-vf', "lenscorrection=cx=0.5:cy=0.5:k1="+dist[4]+":k2="+dist[3]+", Outputfilepath+'/'+cam_names[jj]+'.mp4'])
-
+            subprocess.call(['ffmpeg', '-i', Inputfilepath+'/'+cam_names[jj]+'.mp4', '-vf', "lenscorrection=cx=0.5:cy=0.5:k1="+dist[4]+":k2="+dist[3]+, Outputfilepath+'/'+cam_names[jj]+'.mp4'])
+'''
 
 def trimVideos(Inputfilepath):
     '''Function input is the filepath for undistorted videos and a filepath for the desired output path
@@ -160,7 +147,7 @@ def runDeepLabCut(Inputfilepath,OutputFilepath):
 
         parsedDlcData = datapoints.iloc[3:,7:10].values#the last element in the array is the P value
         vidName,_ = os.path.splitext(videoList[j])
-        np.save(DLCPath+'/'vidName+'.npy',parsedDlcData)#Save data
+        np.save(DLCPath+'/'+vidName+'.npy',parsedDlcData)#Save data
         j+=1
     
     
@@ -174,7 +161,7 @@ def runOpenPose(Inputfilepath,VideoOutputPath,DataOutputFilepath,rotation):
     if not os.path.exists(dataFile+'/OpenPoseData'): 
         os.mkdir(dataFile+'/OpenPoseData')
     OpenPosePath = dataFile+'/OpenPoseData' 
-    syncPath = dataFile+'/Synced
+    syncPath = dataFile+'/Synced'
     vidList = os.listdir(syncPath)
     ###################### OpenPose ######################################
     os.chdir(openPoseFolderPath) # change the directory to openpose
