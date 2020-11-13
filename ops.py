@@ -18,7 +18,6 @@ import time
 from scipy.sparse import lil_matrix
 
 
-base_cam = {'A':0,'B':1,'C':2,'D':3}
 
 class Exceptions(Exception):
     pass
