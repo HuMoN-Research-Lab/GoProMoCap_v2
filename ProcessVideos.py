@@ -8,7 +8,42 @@ import ffmpeg
 import cv2
 import deeplabcut
 import glob
-from config import dataFile, num_of_cameras,Source_video_List
+from config import dataFile, num_of_cameras,Source_video_List,VideoFolder
+
+
+class Exceptions(Exception):
+    pass
+
+##create sub-folders for each camera under the calibration folder, store image in each folder
+def create_calibration():
+    for i in range(num_of_cameras):
+        path = 'calibration' + str(i+1)
+        if not os.path.exists(path):
+            os.mkdir(path)
+    
+    video_path = os.listdir(VideoFolder)
+    
+    if len(video_path) != num_of_cameras:
+        raise Exceptions('number of videos not match number of cameras')
+
+    video_path.sort(key=lambda f: int(re.sub('\D', '', f)))
+    for i in range(len(video_path)):
+        vidcap = cv2.VideoCapture(os.path.join(video_path,path[i]))
+        success,image = vidcap.read()
+        count = 0
+
+        while success:
+            success,image = vidcap.read()
+            if success:
+                height , width , layers =  image.shape
+                #resize = cv2.resize(image, video_resolution) 
+                if count < 2:
+                    cv2.imwrite("Calibration/"+str(i+1)+"/frame%d.jpg" % count, image)     # save frame as JPEG file
+                else:
+                    break
+                count += 1          
+            else:
+                break
 
 
 
