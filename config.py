@@ -24,7 +24,7 @@ start_frame = 0
 
 dataFile = 'data/'
 
-SourceVideoFolder = dataFile +'SourceVideos' 
+VideoFolder = dataFile +'SourceVideos' 
 
 
 Source_video_List =  [['Cam1.avi','CamA'],['Cam2.avi','CamB'],['Cam3.avi','CamC'],['Cam4.avi','CamD']]
