@@ -360,7 +360,7 @@ def run(ProjectMatix):
 
     coords = triangulate(Proj_points,Proj_Mat).solveA()#tranigulate points
     coords = coords[:,:,:-1]
-    Vis(SourceVideoFolder+'/'+Source_video_List[0][0],SourceVideoFolder+'/'+Source_video_List[1][0],SourceVideoFolder+'/'+Source_video_List[2][0],SourceVideoFolder+'/'+Source_video_List[3][0],coords).display()
+    Vis(VideoFolder+'/'+Source_video_List[0][0],VideoFolder+'/'+Source_video_List[1][0],VideoFolder+'/'+Source_video_List[2][0],VideoFolder+'/'+Source_video_List[3][0],coords).display()
 
     return coords
 
