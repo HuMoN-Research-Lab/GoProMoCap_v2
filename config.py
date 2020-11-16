@@ -22,13 +22,18 @@ start_frame = 0
 
 #=============================================USER INPUT DATA================================
 
-dataFile = 'data/'
+dataFile = 'C:/Users/chris/Test'
 
-SourceVideoFolder = dataFile +'SourceVideos' 
+SourceVideoFolder = dataFile +'/SourceVideos' 
+
+DLCConfigpath = 'C:Users/'
+
+openPoseFolderPath = 'C:/Users/chris'
 
 
 Source_video_List =  [['Cam1.avi','CamA'],['Cam2.avi','CamB'],['Cam3.avi','CamC'],['Cam4.avi','CamD']]
 
+rotation = 0 #Need for openpose if recorded with a rotation 
 
 Pixel_coord_FIlE_PATH = dataFile+'OpenPose'
 
