@@ -12,28 +12,12 @@ import cv2.aruco as aruco
 import os
 import pickle
 from ops import toCsv,vec2skewMat,inverseH,R_t2H,get_RT_mtx,video_loader,get_TransMat,triangulate,aruco_detect,charuco_detect,SBA,SBA2
-from config import base_Cam_Index,num_of_cameras,video_resolution,Len_of_frame,SAVE_FOLDER,start_frame,SourceVideoFolder,Pixel_coord_FIlE_PATH,Source_video_List, rotation, dataFile
+from config import base_Cam_Index,num_of_cameras,video_resolution,Len_of_frame,SAVE_FOLDER,start_frame,SourceVideoFolder,Pixel_coord_FIlE_PATH,Source_video_List
 #from visulize_with_out_head import Vis
-#from visualize_without_video import Vis
+from visualize_without_video import Vis
 from scipy.optimize import least_squares
 import time
 from scipy.sparse import lil_matrix
-from ProcessVideos import concatVideos, trimVideos, runDeepLabCut, runOpenPose, Parse_Openpose
-
-#If videos are multiple parts, concat them
-multipleParts = concatVideos(SourceVideoFolder)
-
-#Flash Sync Videos
-trimVideos(SourceVideoFolder, multipleParts)
-
-#Run Deeplabcut
-#runDeepLabCut(dataFile)
-
-#Run OpenPose
-runOpenPose(dataFile, rotation)
-
-#Parse Through Openpose output
-Parse_Openpose(dataFile)
 
 class Exceptions(Exception):
     pass
