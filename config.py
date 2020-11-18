@@ -28,8 +28,10 @@ SourceVideoFolder = dataFile +'/SourceVideos'
 
 DLCConfigpath = 'C:Users/'
 
-openPoseFolderPath = 'C:/Users/chris'
+openPoseFolderPath = 'C:/Users/chris/openpose'
 
+include_OpenPoseHands = False
+include_OpenPoseFace = False
 
 Source_video_List =  [['Cam1.avi','CamA'],['Cam2.avi','CamB'],['Cam3.avi','CamC'],['Cam4.avi','CamD']]
 

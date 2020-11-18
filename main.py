@@ -21,16 +21,16 @@ from scipy.sparse import lil_matrix
 from ProcessVideos import concatVideos, trimVideos, runDeepLabCut, runOpenPose, Parse_Openpose
 
 #If videos are multiple parts, concat them
-multipleParts = concatVideos(SourceVideoFolder)
+#multipleParts = concatVideos(SourceVideoFolder)
 
 #Flash Sync Videos
-trimVideos(SourceVideoFolder, multipleParts)
+#trimVideos(SourceVideoFolder, multipleParts)
 
 #Run Deeplabcut
 #runDeepLabCut(dataFile)
 
 #Run OpenPose
-runOpenPose(dataFile, rotation)
+#runOpenPose(dataFile, rotation)
 
 #Parse Through Openpose output
 Parse_Openpose(dataFile)

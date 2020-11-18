@@ -9,7 +9,7 @@ import ffmpeg
 import cv2
 import deeplabcut
 import glob
-from config import dataFile, num_of_cameras, DLCConfigpath, VideoFolder
+from config import dataFile, num_of_cameras, DLCConfigpath, openPoseFolderPath, include_OpenPoseFace, include_OpenPoseHands
 
 
 class Exceptions(Exception):
@@ -75,15 +75,15 @@ def concatVideos(Source_video_folder):
             if video[:4] in camNameList:
                 x = open(Source_video_folder+'/'+video[:4]+'vids.txt','a')
                 #idx = camNameList.index(video[:4])
-                x.write('file'+" '" +'\\'+video[:4]+"'")
+                x.write('file'+" '" +'\\'+video+"'")
                 x.write('\n')
             k+=1
         #Use ffmpeg to join all parts of the video together
         in_file= ffmpeg.input
         for jj in range(num_of_cameras):
             (ffmpeg
-            .input(Source_video_folder+'/cam'+str(jj+1)+'vids.txt', format='concat', safe=0)
-            .output(syncPath+'/'+videoList[jj]+'.mp4', c='copy')
+            .input(Source_video_folder+'/Cam'+str(jj+1)+'vids.txt', format='concat', safe=0)
+            .output(syncPath+'/'+camNameList[jj][:4]+'.mp4', c='copy')
             .run()
             )
     else:
@@ -155,7 +155,7 @@ def trimVideos(Inputfilepath, multipleParts):
         input1 = ffmpeg.input(Source_video_folder+'/'+videoList[ii])#input for ffmpeg
 
         node1_1 = input1.trim(start_frame=firstFlashFrame,end_frame=secondFlashFrame).setpts('PTS-STARTPTS')#Trim video based on the frame numbers
-        node1_1.output(syncPath+'/'+videoList[ii]).run()#Save to output folder
+        node1_1.output(syncPath+'/Synced'+videoList[ii]).run()#Save to output folder
         
 def runDeepLabCut(Inputfilepath):
     '''Function inputs are filepath to videos to be tracked by DLC and the folder to save the output to
@@ -208,7 +208,7 @@ def runOpenPose(Inputfilepath,rotation):
     os.chdir(openPoseFolderPath) # change the directory to openpose
     for jj in range(num_of_cameras):
         vidName,_ = os.path.splitext(vidList[jj])
-        subprocess.call(['bin/OpenPoseDemo.exe', '--video', syncPath+'/'+vidList[jj], '--frame_rotate='+str(rotation) ,'--hand','--face', '--write_json', OpenPosePath+'/'+vidList[jj]])
+        subprocess.call(['bin/OpenPoseDemo.exe', '--video', syncPath+'/'+vidList[jj]])#, '--frame_rotate='+str(rotation) ,'--hand','--face', '--write_json', OpenPosePath+'/'+vidList[jj]])
         
        
     print('LoopThroughOpenpose')
@@ -224,7 +224,7 @@ def Parse_Openpose(Inputfilepath):
     if not os.path.exists(dataFile+'/OpenPoseData'): 
         os.mkdir(dataFile+'/OpenPoseData')
     OpenPosePath = dataFile+'/OpenPoseData' 
-    OpenPoseList = os.listdir[OpenPoseRaw]
+    '''
     #Establish how many points are being used from the user input
     if include_OpenPoseFace:
         points_from_face = 70
@@ -241,7 +241,7 @@ def Parse_Openpose(Inputfilepath):
     else:
         points_from_skeleton = 0
 
-    points_inFrame = points_from_skeleton + points_from_Hands + points_from_face
+    points_inFrame = points_from_skeleton + points_from_Hands + points_from_face'''
     j = 0 #Counter variable
 
     with  h5py.File(OpenPosePath + '/AllOpenPoseData.hdf5', 'w') as f:
@@ -249,12 +249,14 @@ def Parse_Openpose(Inputfilepath):
         for cam in os.listdir(OpenPoseRaw):# Loops through each camera
             
             cameraGroup = cams.create_group(cam)
+            k=0
             for files in os.listdir(OpenPoseRaw+'/'+cam): #loops through each json file   
                 fileGroup = cameraGroup.create_group('Frame'+str(k))
                 inputFile = open(OpenPoseRaw+'/'+cam+'/'+files) #open json file
                 data = json.load(inputFile) #load json content
                 inputFile.close() #close the input file
-                
+                k+=1
+                ii =0
                 for people in data['people']:
                     skeleton = np.array(people['pose_keypoints_2d']).reshape((-1,3))
                     hand_left = np.array(people['hand_left_keypoints_2d']).reshape((-1,3))
@@ -266,7 +268,7 @@ def Parse_Openpose(Inputfilepath):
                     rightHanddata = persongroup.create_dataset('RightHand', data =hand_right) 
                     leftHanddata = persongroup.create_dataset('LeftHand', data =hand_left)
                     facedata = persongroup.create_dataset('Face', data =face)                                       
-               
+                    ii+=1
    
 
     #Create a list variable to store all frame numbers where there is no person in frame
@@ -275,9 +277,10 @@ def Parse_Openpose(Inputfilepath):
     k = 0#Initialize counter
  
     
- 
-    with h5py.File(OpenPoseRaw + '/AllOpenPoseData.hdf5', 'r') as f:
+    cam_names = os.listdir(OpenPoseRaw)
+    with h5py.File(OpenPosePath + '/AllOpenPoseData.hdf5', 'r') as f:
         allCameras = f.get('Cameras')
+        j=0
         for camera in range(len(allCameras)):
             ret = []#intialize an array to store each json file
             target_skeleton = f.get('Cameras/'+str(cam_names[camera])+'/Frame0/Person0/Skeleton')
@@ -301,9 +304,9 @@ def Parse_Openpose(Inputfilepath):
                         zeroPoint =[]
                         peopleInFrame+=1
                         #========================Load body point data
-                        if include_OpenPoseSkeleton:#If you include skeleton
-                            skeleton  = f.get('Cameras/'+str(cam_names[camera])+'/Frame'+str(frame)+'/Person'+str(person)+'/Skeleton')  
-                            skeleton = skeleton[()]
+                        
+                        skeleton  = f.get('Cameras/'+str(cam_names[camera])+'/Frame'+str(frame)+'/Person'+str(person)+'/Skeleton')  
+                        skeleton = skeleton[()]
                         if include_OpenPoseHands: #If you include hands
                             hand_left = f.get('Cameras/'+str(cam_names[camera])+'/Frame'+str(frame)+'/Person'+str(person)+'/LeftHand')
                             hand_left = hand_left[()]
@@ -352,8 +355,8 @@ def Parse_Openpose(Inputfilepath):
                 ret.append(fullPoints)
             ret = np.array(ret)
             print(ret.shape)
-            name = os.path.splitext(cam)
-            np.save(OpenPosePath+'/OP_'+name+'.npy',ret)
+            np.save(OpenPosePath+'/OP_'+cam_names[j]+'.npy',ret)
+            j+=1
             #np.savetxt(OutputFilepath+'/OP_'+cam_names[k]+'.txt',ret[:,8,0])
             
 
