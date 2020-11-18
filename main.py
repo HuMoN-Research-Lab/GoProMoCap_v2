@@ -358,10 +358,12 @@ if __name__ == '__main__':
 
     
     #1.preprocess video (concat trim....),save them in VideoFolder ('data/SourceVideos')
-
+    multipleParts = concatVideos(Source_video_folder)
     
+    trimVideos(SourceVideoFolder, multipleParts)
     #3.run openpose, save npy files in the 'data/OpenPose'
-
+    runOpenPose(SourceVideoFolder,rotation)
+    Parse_Openpose(SourceVideoFolder)
     
     #run create calibration function, this function set up all necessary data for calibration
     create_calibration()
