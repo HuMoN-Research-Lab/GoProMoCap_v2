@@ -18,22 +18,8 @@ from config import base_Cam_Index,num_of_cameras,video_resolution,Len_of_frame,S
 from scipy.optimize import least_squares
 import time
 from scipy.sparse import lil_matrix
-from ProcessVideos import concatVideos, trimVideos, runDeepLabCut, runOpenPose, Parse_Openpose
+from ProcessVideos import concatVideos, trimVideos, runDeepLabCut, runOpenPose, Parse_Openpose, create_calibration
 
-#If videos are multiple parts, concat them
-#multipleParts = concatVideos(SourceVideoFolder)
-
-#Flash Sync Videos
-#trimVideos(SourceVideoFolder, multipleParts)
-
-#Run Deeplabcut
-#runDeepLabCut(dataFile)
-
-#Run OpenPose
-#runOpenPose(dataFile, rotation)
-
-#Parse Through Openpose output
-Parse_Openpose(dataFile)
 
 class Exceptions(Exception):
     pass
@@ -367,7 +353,22 @@ def run(ProjectMatix):
 
 
 if __name__ == '__main__':
+    
+     #######input video(raw data), fill the entry RawVideo with the path to the raw video file 
 
+    
+    #1.preprocess video (concat trim....),save them in VideoFolder ('data/SourceVideos')
+
+    
+    #3.run openpose, save npy files in the 'data/OpenPose'
+
+    
+    #run create calibration function, this function set up all necessary data for calibration
+    create_calibration()
+
+    #calibrate the cameras
     P,Cam_Pos,charuco_coords = calibration('Calibration')
+    
+    #3D calculation 
     coords = run(P)
 
