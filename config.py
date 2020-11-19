@@ -22,7 +22,7 @@ start_frame = 0
 
 #=============================================USER INPUT DATA================================
 
-dataFile = 'C:/Users/chris/Test'
+dataFile = 'C:/Users/chris/NewTest'
 
 RawVideo = ''
 
@@ -35,9 +35,9 @@ openPoseFolderPath = 'C:/Users/chris/openpose'
 include_OpenPoseHands = False
 include_OpenPoseFace = False
 
-Source_video_List =  [['Cam1.avi','CamA'],['Cam2.avi','CamB'],['Cam3.avi','CamC'],['Cam4.avi','CamD']]
+Source_video_List =  [['Cam1.mp4','CamA'],['Cam2.mp4','CamB'],['Cam3.mp4','CamC'],['Cam4.mp4','CamD']]
 
 rotation = 0 #Need for openpose if recorded with a rotation 
 
-Pixel_coord_FIlE_PATH = dataFile+'OpenPose'
+Pixel_coord_FIlE_PATH = dataFile+'/OpenPoseData'
 

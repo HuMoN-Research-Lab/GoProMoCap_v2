@@ -11,7 +11,6 @@ import deeplabcut
 import glob
 from config import dataFile, num_of_cameras, DLCConfigpath, openPoseFolderPath, include_OpenPoseFace, include_OpenPoseHands,SourceVideoFolder
 
-
 class Exceptions(Exception):
     pass
 
@@ -29,7 +28,7 @@ def create_calibration():
 
     video_path.sort(key=lambda f: int(re.sub('\D', '', f)))
     for i in range(len(video_path)):
-        vidcap = cv2.VideoCapture(os.path.join(video_path,path[i]))
+        vidcap = cv2.VideoCapture(os.path.join(dataFile+'/Synced',video_path[i]))
         success,image = vidcap.read()
         count = 0
 

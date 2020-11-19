@@ -14,7 +14,7 @@ import pickle
 from ops import toCsv,vec2skewMat,inverseH,R_t2H,get_RT_mtx,video_loader,get_TransMat,triangulate,aruco_detect,charuco_detect,SBA,SBA2
 from config import base_Cam_Index,num_of_cameras,video_resolution,Len_of_frame,SAVE_FOLDER,start_frame,SourceVideoFolder,Pixel_coord_FIlE_PATH,Source_video_List, rotation, dataFile
 #from visulize_with_out_head import Vis
-from visualize_without_video import Vis
+from visulize_without_video import Vis
 from scipy.optimize import least_squares
 import time
 from scipy.sparse import lil_matrix
@@ -327,7 +327,7 @@ def run(ProjectMatix):
     for p in pixelCoord_path:
         if not p.startswith('.'):
             path.append(p)
-    path.sort(key=lambda f: int(re.sub('\D', '', f)))
+    path.sort(key=lambda f: int(re.sub('\D','',  f)))
     
     PixelCoord = {}
 
@@ -346,7 +346,8 @@ def run(ProjectMatix):
 
     coords = triangulate(Proj_points,Proj_Mat).solveA()#tranigulate points
     coords = coords[:,:,:-1]
-    Vis(SourceVideoFolder+'/'+Source_video_List[0][0],VideoFolder+'/'+Source_video_List[1][0],SourceVideoFolder+'/'+Source_video_List[2][0],SourceVideoFolder+'/'+Source_video_List[3][0],coords).display()
+    
+    Vis(SourceVideoFolder+'/'+Source_video_List[0][0],SourceVideoFolder+'/'+Source_video_List[1][0],SourceVideoFolder+'/'+Source_video_List[2][0],SourceVideoFolder+'/'+Source_video_List[3][0],coords).display()
 
     return coords
 
@@ -358,12 +359,13 @@ if __name__ == '__main__':
 
     
     #1.preprocess video (concat trim....),save them in VideoFolder ('data/SourceVideos')
-    multipleParts = concatVideos(SourceVideoFolder)
-    trimVideos(SourceVideoFolder, multipleParts)
     
+    #multipleParts = concatVideos(Source_video_folder)
+    
+    #trimVideos(SourceVideoFolder, multipleParts)
     #3.run openpose, save npy files in the 'data/OpenPose'
-    runOpenPose(SourceVideoFolder,rotation)
-    Parse_Openpose(SourceVideoFolder)
+    #runOpenPose(SourceVideoFolder,rotation)
+    #Parse_Openpose(SourceVideoFolder)
     
     #run create calibration function, this function set up all necessary data for calibration
     create_calibration()
