@@ -9,7 +9,7 @@ import ffmpeg
 import cv2
 import deeplabcut
 import glob
-from config import dataFile, num_of_cameras, DLCConfigpath, openPoseFolderPath, include_OpenPoseFace, include_OpenPoseHands
+from config import dataFile, num_of_cameras, DLCConfigpath, openPoseFolderPath, include_OpenPoseFace, include_OpenPoseHands,SourceVideoFolder
 
 
 class Exceptions(Exception):
@@ -22,7 +22,7 @@ def create_calibration():
         if not os.path.exists(path):
             os.mkdir(path)
     
-    video_path = os.listdir(VideoFolder)
+    video_path = os.listdir(SourceVideoFolder)
     
     if len(video_path) != num_of_cameras:
         raise Exceptions('number of videos not match number of cameras')
