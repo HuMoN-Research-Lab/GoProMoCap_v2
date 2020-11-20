@@ -207,7 +207,7 @@ def runOpenPose(Inputfilepath,rotation):
     os.chdir(openPoseFolderPath) # change the directory to openpose
     for jj in range(num_of_cameras):
         vidName,_ = os.path.splitext(vidList[jj])
-        subprocess.call(['bin/OpenPoseDemo.exe', '--video', syncPath+'/'+vidList[jj]])#, '--frame_rotate='+str(rotation) ,'--hand','--face', '--write_json', OpenPosePath+'/'+vidList[jj]])
+        subprocess.call(['bin/OpenPoseDemo.exe', '--video', syncPath+'/'+vidList[jj]]), '--frame_rotate='+str(rotation) ,'--hand','--face', '--write_json', OpenPosePath+'/'+vidList[jj]])
         
        
     print('LoopThroughOpenpose')
