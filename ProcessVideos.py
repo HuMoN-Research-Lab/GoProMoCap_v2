@@ -1,4 +1,5 @@
 import os
+import re
 import h5py
 import subprocess
 import json
@@ -8,51 +9,86 @@ import ffmpeg
 import cv2
 import deeplabcut
 import glob
-from config import dataFile, num_of_cameras,Source_video_List
+from config import dataFile, num_of_cameras, DLCConfigpath, openPoseFolderPath, include_OpenPoseFace, include_OpenPoseHands,SourceVideoFolder
+
+class Exceptions(Exception):
+    pass
+
+##create sub-folders for each camera under the calibration folder, store image in each folder
+def create_calibration():
+    for i in range(num_of_cameras):
+        path = 'calibration' + str(i+1)
+        if not os.path.exists(path):
+            os.mkdir(path)
+    
+    video_path = os.listdir(SourceVideoFolder)
+    
+    if len(video_path) != num_of_cameras:
+        raise Exceptions('number of videos not match number of cameras')
+
+    video_path.sort(key=lambda f: int(re.sub('\D', '', f)))
+    for i in range(len(video_path)):
+        vidcap = cv2.VideoCapture(os.path.join(dataFile+'/Synced',video_path[i]))
+        success,image = vidcap.read()
+        count = 0
+
+        while success:
+            success,image = vidcap.read()
+            if success:
+                height , width , layers =  image.shape
+                #resize = cv2.resize(image, video_resolution) 
+                if count < 2:
+                    cv2.imwrite("Calibration/"+str(i+1)+"/frame%d.jpg" % count, image)     # save frame as JPEG file
+                else:
+                    break
+                count += 1          
+            else:
+                break
 
 
 
 #Concat Videos
 ############This function needs work, I need to find a way to place this in a for loop so amount of cameras doesnt matter
-def concatVideos(Source_video_List):
+def concatVideos(Source_video_folder):
     '''Functions input is filepath is path to raw video folder
     If the videos in the folder are multiple parts the function uses ffmpeg to concat the video parts together
     It saves the concated video to an output folder 
     '''
-    num_of_cameras=2
-    dataFile = 'C:/Users/chris/Test'
-    print(os.listdir(dataFile))
     if not os.path.exists(dataFile+'/Synced'): 
         os.mkdir(dataFile+'/Synced')
     syncPath = dataFile+'/Synced' 
-    videoList = os.listdir(Source_video_List)
+    videoList = os.listdir(Source_video_folder)
     if len(videoList) > num_of_cameras: 
+        multipleParts = True
         #Create a txt file for names of video parts
         txtFileList = []
         camNameList = []
         for ii in range(num_of_cameras): 
-            camNameTxt = open(Source_video_List+'/cam'+str(ii+1)+'vids.txt','a')
-            txtFileList.append(camNameTxt)
+            #camNameTxt = open(Source_video_folder+'/cam'+str(ii+1)+'vids.txt','a')
+            #txtFileList.append(camNameTxt)
             camName = 'Cam'+str(ii+1)
             camNameList.append(camName)
         numOfParts = len(videoList)/num_of_cameras
         k = 0
-        for video in os.listdir(Source_video_List):  #for loop parses through the video folder 
+        for video in os.listdir(Source_video_folder):  #for loop parses through the video folder 
             if video[:4] in camNameList:
-                txtFileList[k].write('file'+" '" +'\\'+video+"'")
-                txtFileList[k].write('\n')
+                x = open(Source_video_folder+'/'+video[:4]+'vids.txt','a')
+                #idx = camNameList.index(video[:4])
+                x.write('file'+" '" +'\\'+video+"'")
+                x.write('\n')
             k+=1
         #Use ffmpeg to join all parts of the video together
         in_file= ffmpeg.input
         for jj in range(num_of_cameras):
             (ffmpeg
-            .input(Source_video_List+'/cam'+str(jj+1)+'vids.txt', format='concat', safe=0)
-            .output(syncPath+'/'+videoList[jj]+'.mp4', c='copy')
+            .input(Source_video_folder+'/Cam'+str(jj+1)+'vids.txt', format='concat', safe=0)
+            .output(syncPath+'/'+camNameList[jj][:4]+'.mp4', c='copy')
             .run()
             )
-    
-Source_video_List = 'C:/Users/chris/Test/Data'
-concatVideos(Source_video_List)
+    else:
+        multipleParts = False
+    return multipleParts
+   
 ''' 
 #################### Undistortion #########################
 #ALSO NEEDS WORK
@@ -74,7 +110,7 @@ def undistortVideos(Inputfilepath,CameraParamsFilePath,Outputfilepath):
             subprocess.call(['ffmpeg', '-i', Inputfilepath+'/'+cam_names[jj]+'.mp4', '-vf', "lenscorrection=cx=0.5:cy=0.5:k1="+dist[4]+":k2="+dist[3]+, Outputfilepath+'/'+cam_names[jj]+'.mp4'])
 '''
 
-def trimVideos(Inputfilepath):
+def trimVideos(Inputfilepath, multipleParts):
     '''Function input is the filepath for undistorted videos and a filepath for the desired output path
     The function finds the frame at the beginning and end of the video where a light flash occurs 
     The video is then trimmed based on those frame numbers
@@ -82,10 +118,14 @@ def trimVideos(Inputfilepath):
     '''    
     if not os.path.exists(dataFile+'/Synced'): 
         os.mkdir(dataFile+'/Synced')
+    if multipleParts:
+        Source_video_folder = dataFile+'/Synced'
+    else:
+        Source_video_folder = Inputfilepath
     syncPath = dataFile+'/Synced' 
-    videoList = os.listdir(Source_video_List)    
+    videoList = os.listdir(Source_video_folder)    
     for ii in range(num_of_cameras):
-        vidcap = cv2.VideoCapture(videoList[ii])#Open video
+        vidcap = cv2.VideoCapture(Source_video_folder+'/'+videoList[ii])#Open video
         vidWidth  = vidcap.get(cv2.CAP_PROP_FRAME_WIDTH) #Get video height
         vidHeight = vidcap.get(cv2.CAP_PROP_FRAME_HEIGHT) #Get video width
         video_resolution = (int(vidWidth),int(vidHeight)) #Create variable for video resolution
@@ -111,12 +151,12 @@ def trimVideos(Inputfilepath):
                         secondFlashFrame = jj #Get the frame number of the brightest frame
             else:#If the frame is not correctly read
                 continue#Continue
-        input1 = ffmpeg.input(dataFile+'/'+videoList[ii])#input for ffmpeg
+        input1 = ffmpeg.input(Source_video_folder+'/'+videoList[ii])#input for ffmpeg
 
         node1_1 = input1.trim(start_frame=firstFlashFrame,end_frame=secondFlashFrame).setpts('PTS-STARTPTS')#Trim video based on the frame numbers
-        node1_1.output(syncPath+'/'+videoList[ii]).run()#Save to output folder
+        node1_1.output(syncPath+'/Synced'+videoList[ii]).run()#Save to output folder
         
-def runDeepLabCut(Inputfilepath,OutputFilepath):
+def runDeepLabCut(Inputfilepath):
     '''Function inputs are filepath to videos to be tracked by DLC and the folder to save the output to
     Videos are copied to output folder, than processed in DLC based on the dlc config path 
     DLC output is saved in outputfilepath and the output is also converted to npy and saved as well
@@ -135,8 +175,8 @@ def runDeepLabCut(Inputfilepath,OutputFilepath):
     videoList =os.listdir(syncPath)
     for video in videoList:
             #Analyze the videos through deeplabcut
-            deeplabcut.analyze_videos(baseProjectPath+'/'+DLCconfigPath, DLCPath+videoList[video], save_as_csv=True)
-            deeplabcut.plot_trajectories(baseProjectPath+'/'+DLCconfigPath, DLCPath + videoList[video])
+            deeplabcut.analyze_videos(baseProjectPath+'/'+DLCConfigpath, DLCPath+videoList[video], save_as_csv=True)
+            deeplabcut.plot_trajectories(baseProjectPath+'/'+DLCConfigpath, DLCPath + videoList[video])
  
     #Load all dlc csv output files  
     csvfiles = os.listdir(DLCPath)
@@ -153,34 +193,37 @@ def runDeepLabCut(Inputfilepath,OutputFilepath):
     
            
 
-def runOpenPose(Inputfilepath,VideoOutputPath,DataOutputFilepath,rotation):
+def runOpenPose(Inputfilepath,rotation):
     '''Function inputs are the undistorted video filepath, the filepath to save the video output, and the filepath to save the data output
     The function takes the undistorted video and processes the videos in openpose
     The output is openpose overlayed videos and raw openpose data
     '''
-    if not os.path.exists(dataFile+'/OpenPoseData'): 
-        os.mkdir(dataFile+'/OpenPoseData')
-    OpenPosePath = dataFile+'/OpenPoseData' 
+    if not os.path.exists(dataFile+'/OpenPoseDataRaw'): 
+        os.mkdir(dataFile+'/OpenPoseDataRaw')
+    OpenPosePath = dataFile+'/OpenPoseDataRaw' 
     syncPath = dataFile+'/Synced'
     vidList = os.listdir(syncPath)
     ###################### OpenPose ######################################
     os.chdir(openPoseFolderPath) # change the directory to openpose
     for jj in range(num_of_cameras):
-        vidName,_ = os.path.splitext(videoList[jj])
-        subprocess.call(['bin/OpenPoseDemo.exe', '--video', syncPath+'/'+vidList[jj], '--frame_rotate='+str(rotation) ,'--hand','--face', '--write_json', OpenPosePath+'/'+vidList[jj]])
+        vidName,_ = os.path.splitext(vidList[jj])
+        subprocess.call(['bin/OpenPoseDemo.exe', '--video', syncPath+'/'+vidList[jj]]), '--frame_rotate='+str(rotation) ,'--hand','--face', '--write_json', OpenPosePath+'/'+vidList[jj]])
         
        
     print('LoopThroughOpenpose')
 
 
-def Parse_Openpose(Inputfilepath,OutputFilepath):
+def Parse_Openpose(Inputfilepath):
     '''Function inputs is the filepath to rawopenpose data and the filepath to where to save the parsed openpose data
     Function takes the raw openpose data and organizes in a h5 file, that h5 file is then opened and the data is saved as an npy file
     Outputs one h5 file and an npy file for each camera and returns the amount of points in the frame
     '''
     
+    OpenPoseRaw = dataFile+'/OpenPoseDataRaw'
+    if not os.path.exists(dataFile+'/OpenPoseData'): 
+        os.mkdir(dataFile+'/OpenPoseData')
     OpenPosePath = dataFile+'/OpenPoseData' 
-    OpenPoseList = os.listdir[OpenPosePath]
+    '''
     #Establish how many points are being used from the user input
     if include_OpenPoseFace:
         points_from_face = 70
@@ -197,20 +240,22 @@ def Parse_Openpose(Inputfilepath,OutputFilepath):
     else:
         points_from_skeleton = 0
 
-    points_inFrame = points_from_skeleton + points_from_Hands + points_from_face
+    points_inFrame = points_from_skeleton + points_from_Hands + points_from_face'''
     j = 0 #Counter variable
 
     with  h5py.File(OpenPosePath + '/AllOpenPoseData.hdf5', 'w') as f:
         cams = f.create_group('Cameras')
-        for cam in os.listdir(OpenPosePath):# Loops through each camera
+        for cam in os.listdir(OpenPoseRaw):# Loops through each camera
             
             cameraGroup = cams.create_group(cam)
-            for files in os.listdir(OpenPosePath+'/'+cam): #loops through each json file   
+            k=0
+            for files in os.listdir(OpenPoseRaw+'/'+cam): #loops through each json file   
                 fileGroup = cameraGroup.create_group('Frame'+str(k))
-                inputFile = open(OpenPosePath+'/'+cam+'/'+files) #open json file
+                inputFile = open(OpenPoseRaw+'/'+cam+'/'+files) #open json file
                 data = json.load(inputFile) #load json content
                 inputFile.close() #close the input file
-                
+                k+=1
+                ii =0
                 for people in data['people']:
                     skeleton = np.array(people['pose_keypoints_2d']).reshape((-1,3))
                     hand_left = np.array(people['hand_left_keypoints_2d']).reshape((-1,3))
@@ -222,7 +267,7 @@ def Parse_Openpose(Inputfilepath,OutputFilepath):
                     rightHanddata = persongroup.create_dataset('RightHand', data =hand_right) 
                     leftHanddata = persongroup.create_dataset('LeftHand', data =hand_left)
                     facedata = persongroup.create_dataset('Face', data =face)                                       
-               
+                    ii+=1
    
 
     #Create a list variable to store all frame numbers where there is no person in frame
@@ -231,9 +276,10 @@ def Parse_Openpose(Inputfilepath,OutputFilepath):
     k = 0#Initialize counter
  
     
- 
+    cam_names = os.listdir(OpenPoseRaw)
     with h5py.File(OpenPosePath + '/AllOpenPoseData.hdf5', 'r') as f:
         allCameras = f.get('Cameras')
+        j=0
         for camera in range(len(allCameras)):
             ret = []#intialize an array to store each json file
             target_skeleton = f.get('Cameras/'+str(cam_names[camera])+'/Frame0/Person0/Skeleton')
@@ -257,9 +303,9 @@ def Parse_Openpose(Inputfilepath,OutputFilepath):
                         zeroPoint =[]
                         peopleInFrame+=1
                         #========================Load body point data
-                        if include_OpenPoseSkeleton:#If you include skeleton
-                            skeleton  = f.get('Cameras/'+str(cam_names[camera])+'/Frame'+str(frame)+'/Person'+str(person)+'/Skeleton')  
-                            skeleton = skeleton[()]
+                        
+                        skeleton  = f.get('Cameras/'+str(cam_names[camera])+'/Frame'+str(frame)+'/Person'+str(person)+'/Skeleton')  
+                        skeleton = skeleton[()]
                         if include_OpenPoseHands: #If you include hands
                             hand_left = f.get('Cameras/'+str(cam_names[camera])+'/Frame'+str(frame)+'/Person'+str(person)+'/LeftHand')
                             hand_left = hand_left[()]
@@ -308,8 +354,8 @@ def Parse_Openpose(Inputfilepath,OutputFilepath):
                 ret.append(fullPoints)
             ret = np.array(ret)
             print(ret.shape)
-            name = os.path.splitext(cam)
-            np.save(OpenPosePath+'/OP_'+name+'.npy',ret)
+            np.save(OpenPosePath+'/OP_'+cam_names[j]+'.npy',ret)
+            j+=1
             #np.savetxt(OutputFilepath+'/OP_'+cam_names[k]+'.txt',ret[:,8,0])
             
 

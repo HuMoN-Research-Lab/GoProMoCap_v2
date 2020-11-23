@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import os
 import re
 import cv2.aruco as aruco
-from config import video_resolution,SourceVideoFolder,num_of_cameras
+from config import video_resolution,dataFile,num_of_cameras
 from scipy.optimize import least_squares
 import time
 from scipy.sparse import lil_matrix
@@ -191,7 +191,7 @@ def video_loader_old(fileName,Cam_Indx):
     Cam_Index: CamA/CamB/CamC, depand on how many cameras are used during recording
     """
 
-    DATADIR_1 = SourceVideoFolder
+    DATADIR_1 = dataFile+'/Synced'
     datadir =[DATADIR_1]
     video_array = []
     for dir in datadir:
